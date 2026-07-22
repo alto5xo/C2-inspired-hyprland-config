@@ -1,0 +1,134 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 26,
+    "spacing": 0,
+    "modules-left": [
+        "custom/deploy",
+        "hyprland/workspaces",
+        "custom/separator",
+        "hyprland/window"
+    ],
+    "modules-center": [
+        "clock#date",
+        "custom/separator",
+        "clock#time"
+    ],
+    "modules-right": [
+        "custom/cpu_ascii",
+        "custom/ram_ascii",
+        "pulseaudio",
+        "custom/vpn",
+        "network",
+        "battery",
+        "custom/abort"
+    ],
+
+    "custom/deploy": {
+        "format": "[SYS_LAUNCH]",
+        "on-click": "rofi -show drun || wofi --show drun",
+        "tooltip": false
+    },
+
+    "hyprland/workspaces": {
+        "on-click": "activate",
+        "format": "SEC-{name}",
+        "persistent-workspaces": {
+            "*": 3
+        }
+    },
+
+    "hyprland/window": {
+        "format": "TARGET: {title}",
+        "max-length": 35,
+        "separate-outputs": true
+    },
+
+    "clock#date": {
+        "format": "DATE: {:%Y%m%d}",
+        "tooltip": false
+    },
+
+    "clock#time": {
+        "format": "TIME: {:%H:%M:%S}",
+        "interval": 1
+    },
+
+    "custom/cpu_ascii": {
+        "exec": "usage=$(awk '/^cpu / {ut=$2+$3+$4+$7+$8; tot=ut+$5+$6; if(pt) {print int(100*(ut-put)/(tot-pt))} else {put=ut; pt=tot; system(\"sleep 0.05\")}}' /proc/stat /proc/stat | tail -n 1); [ -z \"$usage\" ] && usage=0; bar=$(printf \"%*s\" \"$((usage/10))\" | tr ' ' '|'); bar=$(printf \"%-10s\" \"$bar\" | tr ' ' '.'); text=\"CPU:[$bar] $(printf '%02d' $usage)%\"; list=$(ps -eo pcpu,comm --sort=-pcpu | awk 'NR>1 && NR<=6 {val=sprintf(\"%-15s %s%%\", $2, $1); if(list) {list=list \"\\\\n\" val} else {list=val}} END {print list}'); echo \"{\\\"text\\\": \\\"$text\\\", \\\"tooltip\\\": \\\"TOP CPU CONSUMERS:\\\\n----------------\\\\n$list\\\"}\"",
+        "interval": 2,
+        "return-type": "json",
+        "format": "{}",
+        "tooltip": true
+    },
+
+    "custom/ram_ascii": {
+        "exec": "total=$(free | grep Mem | awk '{print $2}'); used=$(free | grep Mem | awk '{print $3}'); ratio=$((used * 100 / total)); bar=$(printf \"%*s\" \"$((ratio/10))\" | tr ' ' '|'); bar=$(printf \"%-10s\" \"$bar\" | tr ' ' '.'); text=\"RAM:[$bar] $(printf '%02d' $ratio)%\"; list=$(ps -eo pmem,comm --sort=-pmem | awk 'NR>1 && NR<=6 {val=sprintf(\"%-15s %s%%\", $2, $1); if(list) {list=list \"\\\\n\" val} else {list=val}} END {print list}'); echo \"{\\\"text\\\": \\\"$text\\\", \\\"tooltip\\\": \\\"TOP RAM CONSUMERS:\\\\n----------------\\\\n$list\\\"}\"",
+        "interval": 2,
+        "return-type": "json",
+        "format": "{}",
+        "tooltip": true
+    },
+
+    "pulseaudio": {
+        "format": "VOL:[{icon}] {volume}%",
+        "format-muted": "VOL: MUTE",
+        "format-icons": {
+            "default": [
+                "..........",
+                "|.........",
+                "||........",
+                "|||.......",
+                "||||......",
+                "|||||.....",
+                "||||||....",
+                "|||||||...",
+                "||||||||..",
+                "|||||||||.",
+                "||||||||||"
+            ]
+        },
+        "scroll-step": 5,
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "tooltip": false
+    },
+
+    "custom/vpn": {
+        "exec": "if ls /sys/class/net | grep -E 'tun|tap|wg|vpn|proton|mullvad' >/dev/null || (command -v nmcli >/dev/null && nmcli con show --active | grep -i vpn >/dev/null); then echo '{\"text\": \"VPN: SECURE\", \"class\": \"secure\"}'; else echo '{\"text\": \"VPN: UNPROTECTED\", \"class\": \"unprotected\"}'; fi",
+        "return-type": "json",
+        "interval": 3,
+        "format": "{}",
+        "tooltip": false
+    },
+
+    "network": {
+        "interface": "wlan0",
+        "format-wifi": "NET: ONLINE ({signalStrength}%)",
+        "format-ethernet": "NET: SECURE_LAN",
+        "format-disconnected": "NET: OFFLINE",
+        "tooltip": false
+    },
+
+    "battery": {
+        "states": {
+            "warning": 25,
+            "critical": 10
+        },
+        "format": "BAT: {capacity}%",
+        "format-charging": "BAT: CHG_{capacity}%",
+        "format-warning": "WARN: BAT_LOW_{capacity}%",
+        "format-critical": "ALERT: BAT_CRIT_{capacity}%"
+    },
+
+    "custom/abort": {
+        "format": "[ABORT_SYS]",
+        "on-click": "sh -c 'OPTS=\"[01] LOCK_SESSION\\n[02] TERMINATE_HYPRLAND\\n[03] WARM_REBOOT\\n[04] COLD_SHUTDOWN\"; if command -v rofi >/dev/null 2>&1; then CHOICE=$(echo -e \"$OPTS\" | rofi -dmenu -p \"C2_POWER_PROTOCOL\" -nb \"#000000\" -nf \"#ffffff\" -sb \"#ffffff\" -sf \"#000000\" -fn \"JetBrains Mono 10\"); else CHOICE=$(echo -e \"$OPTS\" | wofi --dmenu --prompt \"C2_POWER_PROTOCOL\" --width 300 --height 200); fi; case \"$CHOICE\" in *LOCK*) hyprlock ;; *TERMINATE*) hyprctl dispatch exit || pkill Hyprland ;; *REBOOT*) systemctl reboot ;; *SHUTDOWN*) systemctl poweroff ;; esac'",
+        "tooltip": true,
+        "tooltip-format": "Click to trigger system power protocol"
+    },
+
+    "custom/separator": {
+        "format": " | ",
+        "tooltip": false
+    }
+}
